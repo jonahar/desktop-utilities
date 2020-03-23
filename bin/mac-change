@@ -1,0 +1,4 @@
+DEVICE="wlo1"
+sudo ifconfig $DEVICE down
+sudo macchanger -r $DEVICE
+sudo ifconfig $DEVICE up

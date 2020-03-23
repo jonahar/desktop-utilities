@@ -1,0 +1,2 @@
+# catches mouse clicks events
+xev | grep -A2 ButtonPress

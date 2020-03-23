@@ -1,0 +1,28 @@
+#!/bin/bash
+
+DIR=$1
+
+# validate correct usage
+if [ "$DIR" == "" ]; then
+    echo "Usage: recursive-shred [dir_path]"
+    exit 1
+fi
+
+# check directory exists
+if [ ! -d "$DIR" ]; then
+    echo "${DIR} is not an existing directory"
+    exit 1
+fi
+
+# verify user approval before executing
+read -p "Start recursive shred in directory ${DIR}? [y\n] " ANS
+
+if [[ "$ANS" != "y" && "$ANS" != "Y" ]]; then
+    echo "Terminating resursive-shred"
+    exit 1
+fi
+
+# Start
+echo -e "Starting recursive-shred"
+
+find ${DIR} -type f -exec shred -fzv {} +

@@ -1,0 +1,36 @@
+#!/bin/bash
+
+rsync --archive --delete --progress --log-file=/path/to/log SRC DEST
+
+chmod [ugoa][+-=][rwxX] file
+
+openssl aes-256-cbc -a -salt -in secrets.txt -out secrets.txt.enc
+openssl aes-256-cbc -d -a -in secrets.txt.enc -out secrets.txt
+
+touch -t 197025010845 filename
+
+exiftool -DateTimeOriginal='YYYY:MM:DD HH:MM:SS' filename
+exiftool -alldates="1970:01:01 12:00:00"  filename
+
+
+# Colors:
+NORMAL='\033[0m'
+BOLD='\e[1m'
+DIM='\e[2m'
+UNDERLINE='\e[4m'
+BLINK='\e[5m'
+RED="\x1B[31m"
+GRN="\x1B[32m"
+YEL="\x1B[33m"
+BLU="\x1B[34m"
+MAG="\x1B[35m"
+CYN="\x1B[36m"
+WHT="\x1B[37m"
+RESET="\x1B[0m"
+
+printf "${RED}red\n"
+printf "${GRN}grn\n"
+printf "${YEL}yel\n"
+
+echo -e "I ${RED}love${NORMAL} you"
+echo -e "You say ${BLU}goodbye, ${NORMAL}and I say ${GRN}hello"

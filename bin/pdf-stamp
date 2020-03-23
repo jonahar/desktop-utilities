@@ -1,0 +1,23 @@
+#!/bin/bash
+# put a stamp on the first page (and the first page only) of a pdf
+
+if [[ -z "$1" ]] || [ -z "$2" ]; then
+    echo "Usage: stamp-pdf <input-pdf> <output-pdf> [stamp-pdf]"
+    echo
+    echo "[stamp-pdf] default is ~/Documents/stamp.pdf"
+    exit 1
+fi
+
+input="$1"
+output="$2"
+stamp=~/Documents/stamp.pdf
+
+if [ ! -z "$3" ]; then
+    stamp="$3"
+fi
+
+pdftk "$input" cat 1 output temp1
+pdftk temp1 stamp "$stamp" output temp2
+pdftk A=temp2 B="$input" cat A1 B2-end output "$output"
+
+rm -f temp1 temp2

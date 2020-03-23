@@ -1,0 +1,20 @@
+#!/bin/bash
+
+script_name=$(basename "$0")
+
+if [[ -z "$1" ]] || [ -z "$2" ]; then
+    echo "Usage: $script_name <input-pdf> <password> [output-pdf]"
+    echo
+    echo "default output name is \"decrypted_<input-pdf>\""
+    exit 1
+fi
+
+infile="$1"
+pass="$2"
+outfile="$3"
+
+if [ -z "$outfile" ]; then
+    outfile="decrypted_$infile"
+fi
+
+pdftk "$infile" input_pw "$pass" output "$outfile"

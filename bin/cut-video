@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+
+usage(){
+	echo "Usage: $(basename $0)  VIDEO_FILE  START_TIME  END_TIME  [OUTFILE]"
+	echo
+	echo "start_time and end_time in HH:MM:SS.mmm format"
+	echo "outfile is optional. default value is cut_\${video_file}"
+}
+
+
+if [[ $# -lt 3 ]] || [[ $# -gt 4 ]]; then
+	usage
+	exit 1
+fi
+
+
+video_file="$1"
+start_time="$2"
+end_time="$3"
+outfile="$4"
+
+if [[ -z $outfile ]]; then
+	outfile="cut_${video_file}"
+fi
+
+
+ffmpeg -ss $start_time -to $end_time -i $video_file -c copy $outfile
+

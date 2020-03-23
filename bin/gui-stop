@@ -1,0 +1,1 @@
+sudo systemctl stop gdm3.service

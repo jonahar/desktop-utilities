@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# the following command uninstalls all kernels, except the last of them
+# dpkg --list | grep linux-image | awk '{ print $2 }' | sort -V | sed -n '/'`uname -r`'/q;p' | xargs sudo apt-get -y purge
+
+# explanation: http://askubuntu.com/questions/2793/how-do-i-remove-old-kernel-versions-to-clean-up-the-boot-menu
+
+# to be extra careful, first run the next command (notice the little change in the end - echo) this will only PRINT the command that should be executed, so it can be reviewed to see that nothing unexpected is included in the command
+
+echo -e "The following command is the one needed for purging all kernels. please review it before executing:\n"
+dpkg --list | grep linux-image | awk '{ print $2 }' | sort -V | sed -n '/'`uname -r`'/q;p' | xargs echo "sudo apt-get purge"

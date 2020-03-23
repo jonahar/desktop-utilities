@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+# detect local + external ip
+
+# if 'ifconfig' doesn't exist we use 'ip' instead
+IFCONFIG_LOCATION=$(which ifconfig)
+if [[ ! -z "$IFCONFIG_LOCATION" ]] ; then
+    LOCAL=$(ifconfig | grep "inet " | grep -Fv 127.0.0.1 | awk '{print $2}')
+else
+    LOCAL=$(ip -o -4 addr list | grep -Fv 127.0.0.1 | awk '{print $4}' | cut -d/ -f1)
+fi
+EXTERNAL=$(wget -q -O - https://ipleak.net/json/ | jq -r '"\(.ip), \(.country_name)"')
+
+echo "Local IP    : $LOCAL"
+echo "External IP : $EXTERNAL"
+

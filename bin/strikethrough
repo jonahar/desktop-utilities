@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+echo "$*" | sed "s/.\{1\}/&̶/g"

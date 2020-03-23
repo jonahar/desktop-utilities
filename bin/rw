@@ -1,0 +1,2 @@
+# restart wifi
+sudo service network-manager restart
