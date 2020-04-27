@@ -1,0 +1,25 @@
+#!/bin/bash
+
+DIR=$1
+
+if [[ -z $DIR ]]; then
+    DIR="."
+fi
+
+FILENAME_COL_LEN=50
+SIZE_COL_LEN=8
+RESOLUTION_COL_SIZE=10
+
+print_stats() {
+    filename=$(basename "$1")
+    resolution=$(ffprobe -v quiet -print_format json -show_streams "$file" | jq -r '.streams[0] | "\(.width)x\(.height)"')
+    size=$(stat -c "%s" "$file" | numfmt --to=iec --suffix=B)
+    printf "%-${FILENAME_COL_LEN}s %-${SIZE_COL_LEN}s %-${RESOLUTION_COL_SIZE}s\n" "$filename" "$size" "$resolution"
+}
+
+FILES=$(find "${DIR}" -maxdepth 1 -name '*.mp4' -o -name '*.mkv' | sort)
+
+IFS=$'\n' # split FILES by newline. important in case some filenames contain spaces
+for file in $FILES; do
+    print_stats "$file"
+done
