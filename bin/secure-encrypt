@@ -1,81 +1,53 @@
 #!/bin/bash
-#
-# @author jonahar@GitHub
-#
-#
-# Usage:
-# secure-encrypt <directory_to_encrypt> <encrypted_file_name>
-#
-#  1. archive all files in the directory into a single tar
-#  2. encrypt tar
-#  3. decrypt tar, extract and verify integrity of all files from the tar
-#  4. create sha512 of the encrypted file
-#
-#  files will be created in the current working directory
-#
-#############################################################################
 
-if [[ ! -d $1 ]] || [ -z "$2" ]; then
-    echo "Usage: secure-encrypt <directory_to_encrypt> <output_file_name>"
+#  1. encrypt file
+#  2. decrypt file and verify integrity after decryption
+#  3. create sha256 of the encrypted file
+
+usage() {
+    PROG=$(basename $0)
+    echo "$PROG: Encrypt INFILE and generate checksum.
+OUTFILE defaults to \"\$INFILE.gpg\"
+
+Usage: $(basename $0) INFILE [OUTFILE]
+"
     exit 1
+}
+
+abort() {
+    exit 1
+}
+
+if [[ $# -lt 1 || $# -gt 2 ]]; then
+    usage
 fi
 
-dir=$(realpath "$1")
-tar_filename="${2}.tar"
-enc_filename="${tar_filename}.enc"
-checksum_filename="${enc_filename}.sha512sum"
+original_file="$1"
+encrypted_file="$2"
 
-OPENSSL_ENCRYPT_FLAGS="-a -md sha512 -pbkdf2 -iter 10000 -salt"
+if [[ -z "$encrypted_file" ]]; then
+    encrypted_file="$original_file.gpg"
+fi
 
-mkdir "secure_encrypt_wrk_dir"
-WRK_DIR=$(realpath "secure_encrypt_wrk_dir")
+decrypted_file="$original_file.decrypted"
+checksum_file="$encrypted_file.sha256"
 
-# 1)
-echo -n "Archive all files to tar... "
-cd "$dir"
-tar -cf "${WRK_DIR}/${tar_filename}" $(ls)
+gpg -c --no-symkey-cache --output "$encrypted_file" "$original_file"
 if [ ! $? -eq 0 ]; then
-    echo "Failed to tar. Aborting."
-    exit 1
+    echo "Failed to encrypt. Aborting"
+    abort
 fi
-echo "Done"
 
-cd "$WRK_DIR"
-
-# 2)
-echo -n "Encrypting tar... "
-openssl aes-256-cbc -e $OPENSSL_ENCRYPT_FLAGS -in "${tar_filename}" -out "${enc_filename}"
+gpg -d --no-symkey-cache --output "$decrypted_file" "$encrypted_file"
+diff "$original_file" "$decrypted_file"
 if [ ! $? -eq 0 ]; then
-    echo "Failed to encrypt. Aborting."
-    exit 1
+    echo "Encryption integrity verification failed. Aborting"
+    abort
 fi
-echo "Done"
 
-# 3)
-echo -n "Verifying integrity of encrypted files... "
-dec_filename="${tar_filename}.dec"
-openssl aes-256-cbc -d $OPENSSL_ENCRYPT_FLAGS -in "${enc_filename}" -out "${dec_filename}"
-mkdir decrypted_files
-tar -xf "${dec_filename}" -C decrypted_files/
-diff -r "$dir" decrypted_files/
+sha256sum "$encrypted_file" >"$checksum_file"
+sha256sum --quiet -c "${checksum_file}"
 if [ ! $? -eq 0 ]; then
-    echo "Verifying integrity failed. please re-run the script"
-    exit 1
+    echo "Failed to create sha256 of the encrypted file. Aborting"
+    abort
 fi
-echo "Done"
-
-# 4)
-echo -n "Creating sha512 of encrypted tar... "
-sha512sum "${enc_filename}" >"${checksum_filename}"
-sha512sum --quiet -c "${checksum_filename}"
-if [ ! $? -eq 0 ]; then
-    echo "Failed to create sha512 of the encrypted file"
-    exit 1
-fi
-echo "Done"
-
-cd ..
-cp "${WRK_DIR}/${enc_filename}" "${enc_filename}"
-cp "${WRK_DIR}/${checksum_filename}" "${checksum_filename}"
-
-echo "script finished"
