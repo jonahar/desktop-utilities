@@ -2,22 +2,34 @@
 
 in=$1
 out=$2
-background=$3
-dpi=$4
+dpi=$3
+background=$4
 
-if [ ! -f "$in" ] || [ -z "$out" ] ; then
+if [[ ! -f "$in" ]] || [[ -z "$out" ]]; then
     echo "
-Usage: $(basename $0) <svg-in-file> <png-out-file> [background-color] [dpi]
+Usage: $(basename $0) <svg-in-file> <png-out-file> [dpi] [background-color]
 
-background-color as human text ('black', 'white', ...)
+background-color as human text ('black', 'white', ...). If not provided, use transparent background
 default dpi is 100
 "
     exit 1
 fi
 
-if [ -z $dpi ]; then
+if [[ -z $background ]]; then
+    background=white
+    OPACITY=0
+else
+    OPACITY=1
+fi
+
+if [[ -z $dpi ]]; then
     dpi="100"
 fi
 
-inkscape --export-png="$out" --export-dpi=$dpi --without-gui --export-background="$background" "$in"
-
+inkscape \
+    --export-png="$out" \
+    --export-dpi=$dpi \
+    --without-gui \
+    --export-background="$background" \
+    --export-background-opacity=$OPACITY \
+    "$in"
