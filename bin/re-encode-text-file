@@ -1,0 +1,1 @@
+echo "iconv -f windows-1255 -t utf-8 INFILE -o OUTFILE"

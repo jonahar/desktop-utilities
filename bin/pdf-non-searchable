@@ -1,9 +1,9 @@
 #!/bin/bash
 
-IN_FILE=$1
-OUT_FILE=$2
-DENSITY=$3
-QUALITY=$4
+IN_FILE="$1"
+OUT_FILE="$2"
+DENSITY="$3"
+QUALITY="$4"
 
 if [[ -z $IN_FILE || -z $OUT_FILE ]]; then
     echo "usage: pdf-non-searchable <input-pdf> <output-pdf> [density] [quality]"
@@ -14,13 +14,13 @@ fi
 if [ -z "$DENSITY" ]; then
     DENSITY="300"
 fi
-if [ -z $QUALITY ]; then
+if [ -z "$QUALITY" ]; then
     QUALITY="100"
 fi
 
 mkdir pdf-non-searchable-tmp-files
 
-convert -colorspace RGB -density ${DENSITY}x${DENSITY} -quality $QUALITY $IN_FILE pdf-non-searchable-tmp-files/tmp.jpg
-convert pdf-non-searchable-tmp-files/*.jpg $OUT_FILE
+convert -colorspace RGB -density ${DENSITY}x${DENSITY} -quality "$QUALITY" "$IN_FILE" pdf-non-searchable-tmp-files/tmp.jpg
+convert pdf-non-searchable-tmp-files/*.jpg "$OUT_FILE"
 
 rm -rf pdf-non-searchable-tmp-files

@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+in="$1"
+out="${in%.*}.pdf" # replace extension with 'pdf'
+
+# enscript has --highlight option to specify language. if not specified, makes an educated guess
+enscript \
+    --color \
+    --header="" \
+    --output="-" \
+    --quiet \
+    --font=Courier8 "$in" | ps2pdf - "$out"

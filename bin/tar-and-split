@@ -1,0 +1,7 @@
+echo '
+# tar and split:
+tar czv largefile | split -b 10M - "archive.tgz.part-"
+
+# concat and untar:
+cat archive.tgz.part-* | tar xv
+'

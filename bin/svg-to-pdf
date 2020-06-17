@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+
+in=$1
+out=$2
+
+if [[ ! -f "$in" ]]; then
+    echo "Convert svg file to pdf
+    
+Usage: $(basename $0) <svg-infile> [outfile]
+"
+    exit 1
+fi
+
+if [[ -z "$out" ]]; then
+    out="$(basename --suffix='.svg' "$in").pdf"
+fi
+
+inkscape "$in" --export-pdf="$out"

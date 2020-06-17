@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+script_name=$(basename "$0")
+
+IN="$1"
+OUT="$2"
+
+if [[ -z "$IN" ]]; then
+    echo "${script_name}: trim whitespace border from image
+
+Usage: $script_name INPUT_FILE [OUTPUT_FILE]
+if OUTPUT_FILE is not provided, use INPUT_FILE as output (overwriting)
+"
+    exit 1
+fi
+
+if [[ -z "$OUT" ]]; then
+    OUT="$IN"
+fi
+
+convert "$IN" -trim "$OUT"
