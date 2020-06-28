@@ -17,7 +17,7 @@ print_stats() {
     printf "%-${FILENAME_COL_LEN}s %-${SIZE_COL_LEN}s %-${RESOLUTION_COL_SIZE}s\n" "$filename" "$size" "$resolution"
 }
 
-FILES=$(find "${DIR}" -maxdepth 1 -name '*.mp4' -o -name '*.mkv' | sort)
+FILES=$(find "${DIR}" -maxdepth 1 -regex ".*avi\|.*mp4\|.*mkv" | sort)
 
 IFS=$'\n' # split FILES by newline. important in case some filenames contain spaces
 for file in $FILES; do
