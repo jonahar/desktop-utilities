@@ -1,25 +1,76 @@
 #!/bin/bash
 
-DIR=$1
+usage() {
+    echo "$(basename $0): print stats for video files
 
-if [[ -z $DIR ]]; then
-    DIR="."
-fi
+Usage: $(basename $0) [options]
 
-FILENAME_COL_LEN=50
-SIZE_COL_LEN=8
-RESOLUTION_COL_SIZE=10
-
-print_stats() {
-    filename=$(basename "$1")
-    resolution=$(ffprobe -v quiet -print_format json -show_streams "$file" | jq -r '.streams[0] | "\(.width)x\(.height)"')
-    size=$(stat -c "%s" "$file" | numfmt --to=iec --suffix=B)
-    printf "%-${FILENAME_COL_LEN}s %-${SIZE_COL_LEN}s %-${RESOLUTION_COL_SIZE}s\n" "$filename" "$size" "$resolution"
+Options:
+    -d, --dir  DIR      the directory to scan. default is '.'
+    -s, --sort STYLE    sort entries according to the given style.
+                        STYLE should be one of 'name' (default), 'size' or 'res'
+    "
+    exit 1
 }
 
-FILES=$(find "${DIR}" -maxdepth 1 -regex ".*avi\|.*mp4\|.*mkv" | sort)
+parse_args() {
+    # set default values
+    DIR="."
+    SORT_STYLE="name"
+    while [[ $# -gt 0 ]]; do
+        key="$1"
+        case $key in
+        -d | --dir)
+            DIR="$2"
+            shift 2
+            ;;
+        -s | --sort)
+            SORT_STYLE="$2"
+            shift 2
+            ;;
+        -h | --help)
+            usage
+            ;;
+        *)
+            echo "Unrecognized parameter $key"
+            exit 1
+            ;;
+        esac
+    done
+}
 
-IFS=$'\n' # split FILES by newline. important in case some filenames contain spaces
-for file in $FILES; do
-    print_stats "$file"
-done
+print_stats() {
+    IFS=$'\n' # split by newline. important in case some filenames contain spaces
+    filenames="$*"
+
+    # find the length of the longest filename and set the filename column accordingly
+    max_filename_len=$(awk '{for(i=1;i<=NF;i++) if(length($0)>maxval) maxval=length($0);}; END { print maxval;}' <<<$filenames)
+    FILENAME_COL_LEN=$((max_filename_len))
+    SIZE_COL_LEN=8
+    RESOLUTION_COL_SIZE=10
+
+    for file in $filenames; do
+        filename=$(basename "$file")
+        resolution=$(ffprobe -v quiet -print_format json -show_streams "$file" | jq -r '.streams[0] | "\(.width)x\(.height)"')
+        size=$(stat -c "%s" "$file" | numfmt --to=iec --suffix=B)
+        printf "%-${FILENAME_COL_LEN}s %-${SIZE_COL_LEN}s %-${RESOLUTION_COL_SIZE}s\n" "$filename" "$size" "$resolution"
+    done
+}
+
+parse_args "$@"
+
+case "$SORT_STYLE" in
+name)
+    SORT_KEY=1
+    ;;
+size)
+    SORT_KEY=2
+    ;;
+res)
+    SORT_KEY=3
+    ;;
+esac
+
+FILES=$(find "${DIR}" -maxdepth 1 -regex ".*avi\|.*mp4\|.*mkv" | sort -k2 -h)
+
+print_stats $FILES | sort -k $SORT_KEY -h
