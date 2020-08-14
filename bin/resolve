@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+
+usage() {
+    echo "$(basename $0): Print the code of the given command. Only work for text files (scripts)
+
+Usage: $(basename $0) COMMAND
+    "
+    exit 1
+}
+
+case "$1" in
+"" | -h | --help)
+    usage
+    ;;
+*)
+    command="$1"
+    ;;
+esac
+
+path=$(which "$command")
+
+if ! file "$path" | grep -q "text$\|text executable$"; then
+    echo "'$command' doesn't seem to invoke a printable script"
+    exit 1
+fi
+
+cat "$path"
