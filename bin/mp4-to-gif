@@ -1,0 +1,97 @@
+#!/usr/bin/env bash
+
+usage() {
+    echo "$(basename $0): Convert mp4 video file to gif
+
+Usage: $(basename $0) [options] INFILE
+
+    -b, --boomerang     produce a boomerang style gif
+    --fps FPS           fps for the generated gif
+    -w, --width WIDTH   width in pixels (height is automatically determined to
+                        preserve aspect ratio)
+    -o, --outfile OUT   output target. default is the same as INFILE, with 'mp4'
+                        extension replaced with 'gif'
+    "
+    exit 1
+}
+
+parse_args() {
+    # default values
+    INFILE=
+    BOOMERANG=
+    FPS=15
+    WIDTH=800
+
+    while [[ $# -gt 0 ]]; do
+        key="$1"
+        case $key in
+        -b | --boomerang)
+            BOOMERANG="true"
+            shift 1
+            ;;
+        --fps)
+            FPS="$2"
+            shift 2
+            ;;
+        -w | --width)
+            WIDTH="$2"
+            shift 2
+            ;;
+        -o | --outfile)
+            OUTFILE="$2"
+            shift 2
+            ;;
+        -h | --help)
+            usage
+            ;;
+        --* | -*)
+            echo "Unrecognized option $key"
+            exit 1
+            ;;
+        *)
+            # the first positional argument is the INFILE
+            if [[ ! -z "$INFILE" ]]; then
+                echo "Error: Too many positional arguments given"
+                exit 1
+            fi
+            INFILE="$key"
+            shift 1
+            ;;
+        esac
+    done
+
+    if [[ -z "$OUTFILE" ]]; then
+        OUTFILE="$(basename --suffix='.mp4' "$INFILE").gif"
+    fi
+}
+
+parse_args "$@"
+
+if [[ -z "$INFILE" ]]; then
+    echo "Error: INFILE must be provided"
+    echo
+    usage
+fi
+
+# convert to gif
+ffmpeg -y \
+    -i "$INFILE" \
+    -vf "fps=$FPS,scale=$WIDTH:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" \
+    -loop 0 \
+    "${OUTFILE}"
+
+# apply boomerang if asked
+if [[ ! -z "$BOOMERANG" ]]; then
+    mv "${OUTFILE}" "${OUTFILE}.forward.gif"
+    # boomerang gif
+    convert "${OUTFILE}.forward.gif" \
+        -coalesce \
+        -duplicate 1,-2-1 \
+        -quiet \
+        -layers optimize \
+        -loop 0 \
+        -quality 99 \
+        "${OUTFILE}"
+
+    rm "${OUTFILE}.forward.gif"
+fi
