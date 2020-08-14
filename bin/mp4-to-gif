@@ -20,7 +20,7 @@ parse_args() {
     INFILE=
     BOOMERANG=
     FPS=15
-    WIDTH=800
+    WIDTH=500
 
     while [[ $# -gt 0 ]]; do
         key="$1"
@@ -73,25 +73,33 @@ if [[ -z "$INFILE" ]]; then
     usage
 fi
 
-# convert to gif
-ffmpeg -y \
-    -i "$INFILE" \
-    -vf "fps=$FPS,scale=$WIDTH:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" \
-    -loop 0 \
-    "${OUTFILE}"
-
-# apply boomerang if asked
-if [[ ! -z "$BOOMERANG" ]]; then
-    mv "${OUTFILE}" "${OUTFILE}.forward.gif"
-    # boomerang gif
-    convert "${OUTFILE}.forward.gif" \
-        -coalesce \
-        -duplicate 1,-2-1 \
-        -quiet \
-        -layers optimize \
+mp4_to_gif_internal() {
+    IN=$1
+    OUT=$2
+    ffmpeg -y \
+        -i "$IN" \
+        -vf "fps=$FPS,scale=$WIDTH:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" \
         -loop 0 \
-        -quality 99 \
-        "${OUTFILE}"
+        "$OUT"
+}
 
-    rm "${OUTFILE}.forward.gif"
+if [[ -z "$BOOMERANG" ]]; then
+    # no boomerang
+    mp4_to_gif_internal "$INFILE" "$OUTFILE"
+else
+    # apply boomerang
+    REVERSED="$(tempfile -s .mp4)"
+    BOOMERANG_VID="$(tempfile -s .mp4)"
+    FILE_LIST="$(tempfile -s .txt)"
+    # reverse the original video
+    ffmpeg -y -i "$INFILE" -vf reverse "$REVERSED"
+    # concat the original and reversed videos
+    INFILE=$(realpath "$INFILE")
+    echo "file '$INFILE'" >>"$FILE_LIST"
+    echo "file '$REVERSED'" >>"$FILE_LIST"
+    ffmpeg -y -f concat -safe 0 -i "$FILE_LIST" -c copy "$BOOMERANG_VID"
+
+    mp4_to_gif_internal "$BOOMERANG_VID" "$OUTFILE"
+
+    rm "$REVERSED" "$BOOMERANG_VID" "$FILE_LIST"
 fi
