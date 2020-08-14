@@ -1,7 +1,14 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-echo "-9 means maximum compression"
-echo "tar cv /path/to/dir | gzip -9 - > file.tar.gz"
-echo "tar cv /path/to/dir | xz -9 > file.tar.xz"
-echo "zip -9 -r archivename.zip /path/to/dir"
+echo "'-9' for maximum compression
+tar + gzip:
+tar cv /path/to/dir | gzip -9 >dir.tar.gz
+tar cvzf dir.tar.gz /path/to/dir
 
+tar + xz:
+tar cv /path/to/dir | xz -9 >dir.tar.xz
+tar cvJf dir.tar.xz /path/to/dir
+
+zip:
+zip -9 -r archivename.zip /path/to/dir
+"
