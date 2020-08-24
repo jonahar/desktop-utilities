@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+
+usage() {
+    echo "$(basename $0): set default permissions for files and directories, recursively
+
+Usage: $(basename $0) DIR [options]
+
+DIR is the root dir to act on
+
+Options:
+    -f, --file-permissions   permissions to set to files. 3 octal digits. default is 644
+    -d, --dir-permissions    permissions to set to directories. 3 octal digits. default is 755
+    "
+    exit 1
+}
+
+parse_args() {
+    DIR="$1"
+    shift 1
+    # default values
+    FILE_PERMISSIONS="644"
+    DIR_PERMISSIONS="755"
+    while [[ $# -gt 0 ]]; do
+        key="$1"
+        case $key in
+        -f | --file-permissions)
+            FILE_PERMISSIONS="$2"
+            shift 2
+            ;;
+        -d | --dir-permissions)
+            DIR_PERMISSIONS="$2"
+            shift 2
+            ;;
+        -h | --help)
+            usage
+            ;;
+        *)
+            echo "Unrecognized parameter $key"
+            exit 1
+            ;;
+        esac
+    done
+}
+
+if [[ $# -eq 0 ]]; then
+    # No arguments provided"
+    usage
+fi
+
+parse_args "$@"
+
+if [[ -z "$DIR" ]]; then
+    echo "DIR was not provided"
+    usage
+fi
+
+find "$DIR" -type f -exec chmod $FILE_PERMISSIONS "{}" ";"
+find "$DIR" -type d -exec chmod $DIR_PERMISSIONS "{}" ";"
