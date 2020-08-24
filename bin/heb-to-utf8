@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+
+usage() {
+    echo "$(basename $0): Convert file from hebrew encoding (WINDOWS-1255) to UTF-8
+
+Usage: $(basename $0) INFILE OUTFILE
+    "
+    exit 1
+}
+
+INFILE="$1"
+OUTFILE="$2"
+
+if [[ -z "$INFILE" || -z "$OUTFILE" ]]; then
+    usage
+fi
+
+iconv -f WINDOWS-1255 -t utf8 "$INFILE" -o "$OUTFILE"
