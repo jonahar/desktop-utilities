@@ -1,0 +1,53 @@
+#!/usr/bin/env python3
+
+import sys
+import argparse
+import os
+
+
+def parse_args():
+    """
+    parse and return the program arguments
+    """
+    parser = argparse.ArgumentParser(
+        description=f"Add subtitle streams to a video file",
+    )
+    parser.add_argument(
+        "video_file", type=str, action="store", metavar="VIDEO_FILE",
+        help="input video file",
+    )
+    parser.add_argument(
+        "output_mkv_file", type=str, action="store", metavar="OUTPUT_MKV_FILE",
+        help="filepath for the result file. must be an mkv file",
+    )
+    parser.add_argument(
+        "-s", "--subtitle", nargs=2, action="append",
+        help="subtitle file and label (3 letters language specifier)",
+        type=str, metavar=("SUB_FILE", "SUB_LABEL")
+    )
+    
+    return parser.parse_args()
+
+
+def main() -> None:
+    args = parse_args()
+    inputs = f"-i {args.video_file} "
+    for sub_file, sub_label in args.subtitle:
+        inputs += f" -i {sub_file}"
+    
+    maps = " ".join(f" -map {i} " for i in range(0, len(args.subtitle) + 1))
+    
+    codecs = " -c:v copy -c:a copy -c:s copy "
+    
+    metadata = " ".join(
+        f" -metadata:s:s:{i} language={sub_label} "
+        for i, (sub_file, sub_label) in enumerate(args.subtitle)
+    )
+    
+    ffmpeg_command = "ffmpeg " + inputs + maps + codecs + metadata + args.output_mkv_file
+    print(f"Running the following command:\n{ffmpeg_command}\n")
+    os.system(ffmpeg_command)
+
+
+if __name__ == "__main__":
+    main()
