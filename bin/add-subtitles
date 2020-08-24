@@ -31,9 +31,9 @@ def parse_args():
 
 def main() -> None:
     args = parse_args()
-    inputs = f"-i {args.video_file} "
+    inputs = f"-i '{args.video_file}' "
     for sub_file, sub_label in args.subtitle:
-        inputs += f" -i {sub_file}"
+        inputs += f" -i '{sub_file}' "
     
     maps = " ".join(f" -map {i} " for i in range(0, len(args.subtitle) + 1))
     
@@ -44,7 +44,7 @@ def main() -> None:
         for i, (sub_file, sub_label) in enumerate(args.subtitle)
     )
     
-    ffmpeg_command = "ffmpeg " + inputs + maps + codecs + metadata + args.output_mkv_file
+    ffmpeg_command = "ffmpeg " + inputs + maps + codecs + metadata + f"'{args.output_mkv_file}'"
     print(f"Running the following command:\n{ffmpeg_command}\n")
     os.system(ffmpeg_command)
 
