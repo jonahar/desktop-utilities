@@ -1,76 +1,128 @@
-#!/bin/bash
+#!/usr/bin/env python3
+import argparse
+import datetime
+import json
+import os
+import re
+from dataclasses import dataclass
+from typing import List, Tuple
 
-usage() {
-    echo "$(basename $0): print stats for video files
 
-Usage: $(basename $0) [options]
+@dataclass()
+class Video:
+    name: str
+    size_bytes: int
+    resolution: Tuple[int, int]
+    duration_sec: int
 
-Options:
-    -d, --dir  DIR      the directory to scan. default is '.'
-    -s, --sort STYLE    sort entries according to the given style.
-                        STYLE should be one of 'name' (default), 'size' or 'res'
-    "
-    exit 1
+
+SORT_STYLE_TO_KEY_FUNC = {
+    "name": lambda v: v.name,
+    "size": lambda v: v.size_bytes,
+    "resolution": lambda v: v.resolution,
+    "duration": lambda v: v.duration_sec,
 }
 
-parse_args() {
-    # set default values
-    DIR="."
-    SORT_STYLE="name"
-    while [[ $# -gt 0 ]]; do
-        key="$1"
-        case $key in
-        -d | --dir)
-            DIR="$2"
-            shift 2
-            ;;
-        -s | --sort)
-            SORT_STYLE="$2"
-            shift 2
-            ;;
-        -h | --help)
-            usage
-            ;;
-        *)
-            echo "Unrecognized parameter $key"
-            exit 1
-            ;;
-        esac
-    done
-}
 
-print_stats() {
-    filenames="$*"
+def size_fmt(num: float, unit: str) -> str:
+    return f"{num:.1f}{unit}"
 
+
+def bytes_to_human_readable_str(bytes: int) -> str:
+    # decimal suffixes
+    units = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"]
+    for unit in units:
+        if bytes < 1000:
+            return size_fmt(bytes, unit)
+        bytes /= 1000
+    bytes *= 1000
+    return size_fmt(bytes, units[-1])
+
+
+def get_video_stats(filepath: str) -> Video:
+    p = os.popen(
+        f"ffprobe -i '{filepath}' -v quiet -print_format json -show_streams -show_entries format=duration"
+    )
+    stats_dict = json.loads(p.read())
+    filename = os.path.basename(filepath)
+    duration_sec = round(float(stats_dict["format"]["duration"]))
+    width = int(stats_dict["streams"][0]["width"])
+    height = int(stats_dict["streams"][0]["height"])
+    
+    size_bytes = os.stat(filepath).st_size
+    return Video(
+        name=filename,
+        size_bytes=size_bytes,
+        resolution=(width, height),
+        duration_sec=duration_sec,
+    )
+
+
+def print_video_stats(videos: List[Video]) -> None:
+    """
+    print videos details in the given order
+    """
     # find the length of the longest filename and set the filename column accordingly
-    max_filename_len=$(awk '{for(i=1;i<=NF;i++) if(length($0)>maxval) maxval=length($0);}; END { print maxval;}' <<<$filenames)
-    FILENAME_COL_LEN=$((max_filename_len))
-    SIZE_COL_LEN=8
-    RESOLUTION_COL_SIZE=10
+    max_name_len = max(len(video.name) for video in videos)
+    
+    name_col_len = max_name_len + 2
+    size_col_len = 10
+    resolution_col_len = 15
+    duration_col_len = 15
+    
+    # header line
+    print(
+        "Name".ljust(name_col_len) +
+        "Size".ljust(size_col_len) +
+        "Resolution".ljust(resolution_col_len) +
+        "Duration".ljust(duration_col_len)
+    )
+    
+    for v in videos:
+        human_readable_size = bytes_to_human_readable_str(v.size_bytes)
+        resolution_str = f"{v.resolution[0]}x{v.resolution[1]}"
+        duration_str = str(datetime.timedelta(seconds=v.duration_sec))
+        print(
+            f"{v.name:<{name_col_len}}"
+            f"{human_readable_size:{size_col_len}}"
+            f"{resolution_str:<{resolution_col_len}}"
+            f"{duration_str:<{duration_col_len}}"
+        )
 
-    for file in $filenames; do
-        filename=$(basename "$file")
-        resolution=$(ffprobe -v quiet -print_format json -show_streams "$file" | jq -r '.streams[0] | "\(.width)x\(.height)"')
-        size=$(stat -c "%s" "$file" | numfmt --to=iec --suffix=B)
-        printf "%-${FILENAME_COL_LEN}s %-${SIZE_COL_LEN}s %-${RESOLUTION_COL_SIZE}s\n" "$filename" "$size" "$resolution"
-    done
-}
 
-parse_args "$@"
+def parse_args():
+    """
+    parse and return the program arguments
+    """
+    parser = argparse.ArgumentParser(
+        description=f"Print stats for video files",
+    )
+    parser.add_argument(
+        "-d", "--dir", type=str, action="store", default=".",
+        help="the directory to scan. default is current directory",
+    )
+    sort_styles = list(SORT_STYLE_TO_KEY_FUNC.keys())
+    parser.add_argument(
+        "-s", "--sort", type=str, action="store", default=sort_styles[0],
+        choices=sort_styles,
+        help="sort entries according to the given style",
+    )
+    
+    return parser.parse_args()
 
-case "$SORT_STYLE" in
-name)
-    SORT_KEY=1
-    ;;
-size)
-    SORT_KEY=2
-    ;;
-res)
-    SORT_KEY=3
-    ;;
-esac
 
-FILES=$(find "${DIR}" -maxdepth 1 -regex ".*avi\|.*mp4\|.*mkv" | sort -k2 -h)
+def main() -> None:
+    args = parse_args()
+    dir = args.dir
+    sort_style = args.sort
+    pattern = re.compile(r"(avi|mkv|mp4)$")
+    videos = [
+        get_video_stats(os.path.join(dir, filename))
+        for filename in filter(pattern.search, os.listdir(dir))
+    ]
+    videos.sort(key=SORT_STYLE_TO_KEY_FUNC[sort_style])
+    print_video_stats(videos)
 
-IFS=$'\n' # split by newline. important in case some filenames contain spaces
-print_stats $FILES | sort -k $SORT_KEY -h
+
+if __name__ == "__main__":
+    main()
