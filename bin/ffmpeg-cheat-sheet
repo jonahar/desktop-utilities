@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+
+# flags:
+
+-i # specify input file. can be repeated
+
+-map i:j # include stream j from input source i (starting from 0)
+
+-metadata:s:<stream_type>:<stream_index> key=value # set metadata for specific stream. stream_type is one of: 'v' for video, 'a' for audio and 's' for subtitle. E.g. "-metadata:s:a:1 language=eng" sets the language of the second audio stream to English
+
+
+
+# Examples: 
+
+# list all streams in a video file (video, audio, subtitles, etc.)
+ffmpeg -i <input> 2>&1 | grep "Stream #" | wc -l
+
+# Specify two inputs. From the first input, include the first, third and fifth streams. From the second input, include the first stream. also set language and title metadata for the streams
+ffmpeg -i video_1.mp4 -i subs.srt \
+    -map 0:0 -map 0:2 -map 0:4 -map 1:0 \
+    -metadata:s:v:0 title=English \
+    -metadata:s:a:0 language=eng -metadata:s:a:0 title=English \
+    -metadata:s:s:0 language=eng -metadata:s:s:0 title=English \
+    -metadata:s:s:1 language=heb -metadata:s:s:1 title=Hebrew \
+    -metadata title="My Video Title" \
+    -c copy output.mkv
+
+# concat videos
+$ cat mylist.txt
+file '/path/to/file1'
+file '/path/to/file2'
+file '/path/to/file3'
+$ ffmpeg -f concat -safe 0 -i mylist.txt -c copy output.mp4
