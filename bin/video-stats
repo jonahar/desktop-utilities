@@ -5,6 +5,7 @@ import json
 import os
 import re
 from dataclasses import dataclass
+from shutil import which
 from typing import List, Tuple
 
 
@@ -40,6 +41,9 @@ def bytes_to_human_readable_str(bytes: int) -> str:
 
 
 def get_video_stats(filepath: str) -> Video:
+    if which("ffprobe") is None:
+        raise NameError("ffprobe command not found. Make sure ffmpeg is installed")
+    
     p = os.popen(
         f"ffprobe -i '{filepath}' -v quiet -print_format json -show_streams -show_entries format=duration"
     )
