@@ -41,7 +41,7 @@ parse_args() {
 }
 
 if [[ $# -eq 0 ]]; then
-    # No arguments provided"
+    # No arguments provided
     usage
 fi
 
