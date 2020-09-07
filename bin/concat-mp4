@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+
+usage() {
+    echo "$(basename $0): concatenate multiple mp4 files into a single mp4 file
+
+Usage:   $(basename $0) [options] MP4-FILES
+
+Example: $(basename $0) -o result.mp4 vid1.mp4 vid2.mp4 vid3.mp4
+
+
+Options:
+    -o, --output OUTPUT     output file
+    "
+    exit 1
+}
+
+parse_args() {
+    # every positional argument is a video file to be included. we save them in an array
+    FILES=()
+    OUTPUT=
+    while [[ $# -gt 0 ]]; do
+        key="$1"
+        case $key in
+        -o | --output)
+            OUTPUT="$2"
+            shift 2
+            ;;
+        -h | --help)
+            usage
+            ;;
+        *)
+            FILES+=("$1")
+            shift
+            ;;
+        esac
+    done
+}
+
+if [[ $# -eq 0 ]]; then
+    # No arguments provided
+    usage
+fi
+
+parse_args "$@"
+
+if [[ -z "$OUTPUT" ]]; then
+    echo "Error: Output file must be provided"
+    exit 1
+fi
+
+FILES_LIST=$(mktemp --suffix=.txt)
+
+for ((i = 0; i < ${#FILES[@]}; i++)); do
+    path="$(realpath ${FILES[$i]})"
+    echo "file '$path'" >>"$FILES_LIST"
+done
+
+ffmpeg -f concat -safe 0 -i "$FILES_LIST" -c copy "$OUTPUT"
+rm $FILES_LIST
