@@ -1,0 +1,58 @@
+#!/usr/bin/env python3
+
+
+import argparse
+import requests
+import re
+
+
+def parse_args():
+    """
+    parse and return the program arguments
+    """
+    parser = argparse.ArgumentParser(
+        description=f"Convert amount from USD to ILS according to most recent exchange rate",
+    )
+    parser.add_argument(
+        "usd_amount",
+        type=float,
+        action="store",
+        metavar="USD_AMOUNT",
+        help="amount in USD",
+    )
+
+    return parser.parse_args()
+
+
+def usd_to_ils_exchange_rate() -> float:
+    amount = 1
+    url = f"https://www.countrycurrencyrates.com/en/convert/USD/ILS/{amount}"
+
+    res = requests.get(url)
+    if not res.ok:
+        raise RuntimeError(
+            f"Failed to get response from exchange rate provider. http status code: {res.status_code}"
+        )
+
+    # The response should contain a text in the form of "1 USD = 3.21606 ILS"
+    pattern = re.compile(r"1 USD = (\d+(\.\d+)?) ILS")
+
+    m = pattern.search(res.text)
+    if not m:
+        raise RuntimeError("Unexpected response format")
+
+    usd_to_ils = float(m.group(1))
+    return usd_to_ils
+
+
+def main() -> None:
+    args = parse_args()
+    exchange_rate = usd_to_ils_exchange_rate()
+    ils_amount = round(args.usd_amount * exchange_rate, 2)
+    print(
+        f"{args.usd_amount} USD = {ils_amount} ILS  (at an exchange rate of {exchange_rate})"
+    )
+
+
+if __name__ == "__main__":
+    main()
