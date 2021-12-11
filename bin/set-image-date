@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+usage() {
+    echo "$(basename $0): set image creation/modification date
+
+Usage: $(basename $0) IMAGE_FILE DATE
+
+DATE format is 'YYYY-MM-DD HH-MM'
+"
+    exit 1
+}
+
+FILE="$1"
+DATE="$2"
+
+if [[ -z "$FILE" || -z "$DATE" ]]; then
+    usage
+fi
+
+exiftool -AllDates="$DATE" "$FILE"
