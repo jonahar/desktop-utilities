@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+
+in="$1"
+out="$2"
+page="$3"
+dpi="$4"
+
+usage() {
+    echo "Usage: $(basename $0) PDF_INFILE [OUTPUT_NAME] [PAGE_NUM] [DPI]
+
+Extract pages of the given pdf to png files.
+
+OUTPUT_NAME does not need to include extension (.png)
+
+If PAGE_NUM is given, extract this page only.
+"
+
+}
+
+if [[ -z "$in" ]]; then
+    usage
+    exit 1
+fi
+
+if [[ -z "$out" ]]; then
+    out="$(basename -s .pdf "$in")"
+fi
+
+if [[ -z $page ]]; then
+    # will produce files "$out-01.png", "$out-02.png", etc.
+    SINGLE_PAGE=
+else
+    SINGLE_PAGE="-f $page -singlefile"
+fi
+
+if [[ -z "$dpi" ]]; then
+    dpi=300
+fi
+
+pdftoppm "$in" "$out" -png $SINGLE_PAGE -r "$dpi"
+
+
