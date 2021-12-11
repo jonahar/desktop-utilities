@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+
+usage() {
+    echo "$(basename $0): Make all pages of a pdf the same size
+
+Usage: $(basename $0) INFILE OUTFILE
+"
+    exit 1
+}
+
+
+infile="$1"
+outfile="$2"
+
+if [[ -z "$infile" || -z "$outfile" ]]; then
+    usage
+fi
+
+
+/usr/bin/gs \
+    -o "$outfile" \
+    -sDEVICE=pdfwrite \
+    -dPDFFitPage \
+    -r300x300 \
+    -g2550x3300 \
+    "$infile"
+
