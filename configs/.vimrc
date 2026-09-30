@@ -30,6 +30,5 @@ syntax on
 set noerrorbells
 set vb t_vb=
 
-" Don't break long lines into multiple lines (scroll horizontally instead)
-set nowrap
-
+" Wraps at word boundaries (whitespace) instead of in the middle of a word
+set linebreak
